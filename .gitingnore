@@ -1,0 +1,28 @@
+# binaries
+/bin/
+/dist/
+/out/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# build/test artifacts
+*.test
+*.out
+*.prof
+coverage/
+*.cover
+
+# go workspace
+*.log
+
+# env
+.env
+
+
+# editors/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
