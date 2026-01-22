@@ -7,16 +7,18 @@ import (
 
 	"inbox-service/internal/application/ports"
 	"inbox-service/internal/application/queries"
+	"inbox-service/internal/application/ingest"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Handlers struct {
 	Feed *queries.FeedHandler
+	Ingest *ingest.Handler
 }
 
-func NewHandlers(feed *queries.FeedHandler) *Handlers {
-	return &Handlers{Feed: feed}
+func NewHandlers(feed *queries.FeedHandler, ingest *ingest.Handler) *Handlers {
+	return &Handlers{Feed: feed, Ingest: ingest}
 }
 
 // For now: tenant_id and user_id come from headers to keep it simple.
@@ -66,4 +68,20 @@ func (h *Handlers) GetFeed(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusOK, resp)
+}
+
+
+func (h *Handlers) DevIngestTaskAssigned(c echo.Context) error {
+	var evt ingest.TaskAssignedToUser
+	if err := c.Bind(&evt); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]any{"error": "invalid json"})
+	}
+	id, err := h.Ingest.HandleTaskAssigned(c.Request().Context(), evt)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]any{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"status":        "ok",
+		"inbox_item_id": id,
+	})
 }

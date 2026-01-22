@@ -8,6 +8,7 @@ import (
 
 	apphttp "inbox-service/internal/infrastructure/http"
 	"inbox-service/internal/application/queries"
+	"inbox-service/internal/application/ingest"
 	"inbox-service/internal/infrastructure/db"
 
 	"github.com/labstack/echo/v4"
@@ -25,7 +26,14 @@ func main() {
 
 	feedReader := db.NewFeedReaderPG(pool)
 	feedHandler := queries.NewFeedHandler(feedReader)
-	handlers := apphttp.NewHandlers(feedHandler)
+
+	txMgr := db.NewTxManagerPG(pool)
+	inboxWriter := db.NewInboxWriterPG()
+	deduper := db.NewEventDeduperPG()
+	outboxWriter := db.NewOutboxWriterPG()
+	ingestHandler := ingest.NewHandler(txMgr, inboxWriter, deduper, outboxWriter)
+
+	handlers := apphttp.NewHandlers(feedHandler, ingestHandler)
 
 	e := echo.New()
 	e.HideBanner = true
